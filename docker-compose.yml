@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # --- Infrastructure ---
+  # --- Infrastructure (Rabbit, Prom, Grafana) ---
   rabbitmq:
     image: rabbitmq:3-management
     ports:
@@ -11,7 +11,7 @@ services:
       - ms-net
 
   prometheus:
-    build: ./prometheus  # <--- Build our custom image
+    build: ./prometheus
     ports:
       - "9090:9090"
     networks:
@@ -23,21 +23,6 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    networks:
-      - ms-net
-
-  # --- CI/CD ---
-  # We run Jenkins as a container that has access to the host Docker socket
-  # so it can spin up/down the other containers.
-  jenkins:
-    build: ./jenkins-docker  # <--- CHANGED: Build from local folder
-    user: root               # Keeps root to ensure permission to socket
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - ./jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - ms-net
 
