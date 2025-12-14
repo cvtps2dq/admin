@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # --- Infrastructure ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ms-net
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - ms-net
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - ms-net
+
+  # --- CI/CD ---
+  # We run Jenkins as a container that has access to the host Docker socket
+  # so it can spin up/down the other containers.
+  jenkins:
+    image: jenkins/jenkins:lts
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Start with a clean state or persistence as needed
+    networks:
+      - ms-net
+
+  # --- Microservices ---
+  order-service:
+    build: ./order-service
+    ports:
+      - "3001:3001"
+    environment:
+      - AMQP_URL=amqp://rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    networks:
+      - ms-net
+
+  payment-service:
+    build: ./payment-service
+    ports:
+      - "3002:3002"
+    environment:
+      - AMQP_URL=amqp://rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    networks:
+      - ms-net
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "3003:3003"
+    environment:
+      - AMQP_URL=amqp://rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    networks:
+      - ms-net
+
+networks:
+  ms-net:
+    driver: bridge

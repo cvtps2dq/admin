@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'microservices_app'
+    static_configs:
+      - targets: 
+        - 'order-service:3001'
+        - 'payment-service:3002'
+        - 'notification-service:3003'
