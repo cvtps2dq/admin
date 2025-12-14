@@ -11,9 +11,7 @@ services:
       - ms-net
 
   prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    build: ./prometheus  # <--- Build our custom image
     ports:
       - "9090:9090"
     networks:
@@ -32,15 +30,14 @@ services:
   # We run Jenkins as a container that has access to the host Docker socket
   # so it can spin up/down the other containers.
   jenkins:
-    image: jenkins/jenkins:lts
-    user: root
+    build: ./jenkins-docker  # <--- CHANGED: Build from local folder
+    user: root               # Keeps root to ensure permission to socket
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - ./jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      # Start with a clean state or persistence as needed
     networks:
       - ms-net
 
